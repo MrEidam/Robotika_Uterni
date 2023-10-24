@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cassert>
+#include <cmath>
 
 /*
  * V Kocourkově se rozhodly, že systém adres domů je zastaralý a potřebují nový.
@@ -19,30 +20,44 @@
  *
  * Každé město musím mít alespoň jeden blok, každý blok musí mít alespoň jednu ulici, každá ulice musí mít alespoň jeden dům.
  */
-
 /*
  * Vytvořte strukturu pro definici města.
  * Potřebujete si ukládat kolik má město bloků, kolik má každý blok ulic a kolik má každá ulice domů.
  * (všechny bloky a všechny ulice jsou stejné)
  */
-struct Town;
+
+struct Town{
+    int blocks;
+    int streets;
+    int houses;
+};
 
 /*
  * Vytvořte strukturu pro definici adresy.
  * Potřebujete si ukládat číslo bloku, číslo ulice a číslo domu.
  */
-struct Address;
 
+struct Address{
+    int block;
+    int street;
+    int house;
+};
 
 /*
  * Napište funkci, která zkontorluje, zda je město validní.
  */
-bool isTownValid(... town);
+
+bool isTownValid(const Town &x){
+    return x.blocks > 0 && x.streets > 0 && x.houses > 0 && std::sqrt(x.blocks) * std::sqrt(x.blocks) == x.blocks;
+};
 
 /*
  * Napište funkci, která zkontroluje, zda je adresa validní.
  */
-bool isAddressValid(... address, ... town);
+
+bool isAddressValid(const Address &a, const Town &t){
+    return t.blocks > a.block && t.streets > a.street && t.houses > a.house;
+};
 
 /*
  * Napište funkci, která vypočítá vzdálenost mezi dvěma adresami.
@@ -51,9 +66,20 @@ bool isAddressValid(... address, ... town);
  * Pohyb mezi ulicemi (+-Y) - vzdálenost 5
  * Pohyb mezi bloky (+-X, +-Y) - vzdálenost 10
  */
-std::size_t distance(... address1, ... address2, ... town);
 
-int main() {
+std::size_t distance(const Address &a1, const Address &a2, const Town &town){
+    int townW = std::sqrt(town.blocks);
+
+    int xb = std::abs((a1.block % townW) - (a2.block % townW));
+    int yb = std::abs((a1.block / townW) - (a2.block / townW));
+
+    int x = std::abs((a2.house - a1.house) + xb * (town.houses-1) + xb*10);
+    int y = std::abs(((a2.street - a1.street) * 5) + yb * ((town.streets * 5) - 1) + yb*10);
+
+    return x+y;
+};
+
+int main(){
     Town validTown = {
         .blocks = 9,
         .streets = 3,
@@ -86,16 +112,19 @@ int main() {
 
     Address invalidAddress1 = {
         .block = 4,
-        .street = 2,
+        .street = 3,
         .house = 3,
     };
 
     assert(isTownValid(validTown));
     assert(!isTownValid(invalidTown1));
     assert(!isTownValid(invalidTown2));
-    assert(isAddressValid(validAddress, validTown));
+    assert(isAddressValid(validAddress1, validTown));
     assert(!isAddressValid(invalidAddress1, validTown));
 
-    assert(distance(validAddress, validAddress, validTown) == 0);
-    assert(distance(validAddress, validAddress2, validTown) == 34);
+    // std::cout << distance(validAddress1, validAddress1, validTown) << std::endl;
+    // std::cout << distance(validAddress1, validAddress2, validTown) << std::endl;
+    
+    assert(distance(validAddress1, validAddress1, validTown) == 0);
+    assert(distance(validAddress1, validAddress2, validTown) == 19);
 }
